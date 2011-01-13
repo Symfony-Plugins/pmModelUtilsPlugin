@@ -1,0 +1,184 @@
+# pmModelUtilsPlugin
+
+The `pmModelUtilsPlugin` plugin adds extra functionality to our Propel (or 
+Doctrine) models.
+
+## Installation
+  
+  * Install the plugin via the symfony plugin system:
+  
+        [bash]
+        $ ./symfony plugin:install pmModelUtilsPlugin
+        
+    or via subversion:
+    
+        [bash]
+        $ svn co http://svn.symfony-project.com/plugins/pmModelUtilsPlugin/trunk plugins/pmModelUtilsPlugin
+  
+  * Enable the plugin (only when installing using subversion)
+  
+        [php]
+        // in config/ProjectConfiguration.class.php
+        $this->enablePlugins("pmModelUtilsPlugin");
+  
+  * Publish the plugin
+  
+        [bash]
+        $ ./symfony pl:p
+
+  * Clear the cache
+
+        [bash]
+        $ ./symfony cc
+  
+## Utils
+
+### BaseMeta (by example)
+
+`BaseMeta` is a class for handling statuses and/or types. Supose a class called
+`Article` that has 2 types: `article` and `new` that renders the article in a
+different way. Also, the `Article` class has 2 statuses: `draft` and
+`published`. Using `BaseMeta`, we define a schema like this:
+
+    [yml]
+    propel:
+      article:
+        title:
+          type: varchar(255)
+          required: true
+          index: unique
+        content:
+          type: varchar(255)
+          required: true
+        article_type:
+          type: integer
+          default: 0
+        article_status:
+          type: integer
+          default: 0
+
+So, we define `article_type` and `article_status`, which are integer fields
+that represents `article` or `new` and `draft` or `published` respectively. Now
+we should define 2 classes:
+
+  * ArticleType: for handling `article_type` values, strings and choices.
+  * ArticleStatus: for handling `article_status` values, strings and choices.
+
+First define `ArticleType`:
+
+    [php]
+    <?php
+    
+    // in lib/meta/ArticleType.class.php (for simplicity)
+    
+    class ArticleType extends BaseMeta
+    {
+      const ARTICLE = 0;
+      const NEW = 1;
+      
+      protected static $choices = array(
+        self::ARTICLE => "Article",
+        self::NEW => "New"
+      ); 
+    }
+
+And then define `ArticleStatus`:
+
+    [php]
+    <?php
+    
+    // in lib/meta/ArticleStatus.class.php (for simplicity)
+    
+    class ArticleType extends BaseMeta
+    {
+      const DRAFT = 0;
+      const PUBLISHED = 1;
+      
+      protected static $choices = array(
+        self::DRAFT => "Draft",
+        self::PUBLISHED => "Published"
+      ); 
+    }
+
+Now we can use `ArticleType` and `ArticleStatus` for retrieving:
+
+  * Choices:
+  
+        [php]
+        ArticleType::getChoices(); // returns Array( [0] => "Article", [1] => "New" )
+        
+        ArticleStatus::getChoices(); // returns Array( [0] => "Draft", [1] => "Published" )
+        
+        // also you can specify an empty value (or just empty):
+        ArticleType::getChoices("Select the article type");
+  
+  * Keys:
+  
+        [php]
+        ArticleType::getKeys(); // returns Array( [0] => 0, [1] => 1 )
+        
+        ArticleStatus::getKeys(); // returns Array( [0] => 0, [1] => 1 )
+        
+        // same as getChoices, you can specify an empty value (or just empty)
+  
+  * A string for a key:
+  
+        [php]
+        ArticleType::getString(ArticleType::ARTICLE); // returns "Article"
+        
+        ArticleStatus::getString(ArticleStatus::PUBLISHED); // returns "Published"
+
+While `getChoices` and `getKeys` are used by `pmWidgetFormMetaChoice`
+(explained bellow) and `pmValidatorMetaChoice` (explained bellow) respectively,
+`getString` could be used for representing the value in lists, defining, for
+example, these methods:
+
+    [php]
+    // in Article.class.php
+    
+    public function getArticleTypeString()
+    {
+      return ArticleType::getString($this->getArticleType());
+    }
+    
+    public function getArticleStatusString()
+    {
+      return ArticleStatus::getString($this->getArticleStatus());
+    }
+
+#### Widget
+
+  * `pmWidgetFormMetaChoice`: is a subclass of `sfWidgetFormChoice` that adds
+    the `class` and `add_empty` options.
+    
+        [php]
+        // in ArticleForm.class.php
+        
+        $this->setWidget("article_type", new pmWidgetFormMetaChoice(array(
+          "class" => "ArticleType"
+        )));
+        
+        $this->setWidget("article_status", new pmWidgetFormMetaChoice(array(
+          "class" => "ArticleStatus"
+        )));
+
+#### Validator
+
+  * `pmValidatorMetaChoice`: is a subclass of `sfValidatorChoice` that adds the
+    `class` and `add_empty` options.
+    
+        [php]
+        // in ArticleForm.class.php
+        
+        $this->setValidator("article_type", new pmValidatorMetaChoice(array(
+          "class" => "ArticleType"
+        )));
+        
+        $this->setValidator("article_status", new pmValidatorMetaChoice(array(
+          "class" => "ArticleStatus"
+        )));
+
+## TODO
+
+  * Add backward compatibility with PHP 5.2 (`$class::method()` or
+    `$class::$attr` is not backward compatible).
