@@ -1,0 +1,12 @@
+propel:
+  article:
+    title:
+      type: varchar(255)
+      required: true
+      index: unique
+    content:
+      type: longvarchar
+      required: true
+    status:
+      type: integer
+      default: 0
