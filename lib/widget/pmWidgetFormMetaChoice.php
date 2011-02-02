@@ -17,6 +17,26 @@ class pmWidgetFormMetaChoice extends sfWidgetFormChoice
     $class = $this->getOption("model");
     $add_empty = $this->getOption("add_empty");
     
-    return $class::getChoices($add_empty);
+    $choices = $class::getChoices($add_empty);
+    
+    if (!$this->getOption('translate_choices'))
+    {
+      return $choices;
+    }
+
+    $results = array();
+    foreach ($choices as $key => $choice)
+    {
+      if (is_array($choice))
+      {
+        $results[$this->translate($key)] = $this->translateAll($choice);
+      }
+      else
+      {
+        $results[$key] = $this->translate($choice);
+      }
+    }
+
+    return $results;
   }
 }
